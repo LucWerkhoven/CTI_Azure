@@ -1,0 +1,343 @@
+{
+    "$schema": "https://raw.githubusercontent.com/mspnp/template-building-blocks/master/schemas/buildingBlocks.json",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "buildingBlocks": {
+            "value": [
+                {
+                    "type": "VirtualNetwork",
+                    "settings": [
+                        {
+                            "name": "luc-ntier-vnet",
+                            "addressPrefixes": [
+                                "10.0.0.0/16"
+                            ],
+                            "subnets": [
+                                {
+                                    "name": "web",
+                                    "addressPrefix": "10.0.1.0/24",
+                                    "serviceEndpoints": [
+                                        {
+                                            "service": "Microsoft.KeyVault"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "biz",
+                                    "addressPrefix": "10.0.2.0/24",
+                                    "serviceEndpoints": [
+                                        {
+                                            "service": "Microsoft.KeyVault"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "data",
+                                    "addressPrefix": "10.0.3.0/24",
+                                    "serviceEndpoints": [
+                                        {
+                                            "service": "Microsoft.KeyVault"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "mgmt",
+                                    "addressPrefix": "10.0.0.128/25",
+                                    "serviceEndpoints": [
+                                        {
+                                            "service": "Microsoft.KeyVault"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "appgateway",
+                                    "addressPrefix": "10.0.4.0/25",
+                                    "serviceEndpoints": [
+                                        {
+                                            "service": "Microsoft.KeyVault"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "VirtualMachine",
+                    "settings": [
+                        {
+                            "vmCount": 3,
+                            "namePrefix": "web",
+                            "computerNamePrefix": "web",
+                            "adminUsername": "testadminuser",
+                            "adminPassword": "Awesome@PW",
+                            "virtualNetwork": {
+                                "name": "luc-ntier-vnet"
+                            },
+                            "nics": [
+                                {
+                                    "isPrimary": true,
+                                    "isPublic": false,
+                                    "privateIPAllocationMethod": "Static",
+                                    "startingIPAddress": "10.0.1.5",
+                                    "subnetName": "web"
+                                }
+                            ],
+                            "osType": "linux",
+                            "imageReference": {
+                                "offer": "UbuntuServer",
+                                "publisher": "Canonical",
+                                "sku": "18.04-LTS",
+                                "version": "latest"
+                            },
+                            "applicationGatewaySettings": {
+                                "name": "webAppGateway",
+                                "sku": {
+                                    "tier": "WAF_v2"
+                                },
+                                "gatewayIPConfigurations": [
+                                    {
+                                        "name": "webIPConfig",
+                                        "subnetName": "appgateway"
+                                    }
+                                ],
+                                "frontendIPConfigurations": [
+                                    {
+                                        "name": "webFrontEndIPConfig1",
+                                        "applicationGatewayType": "Public"
+                                    }
+                                ],
+                                "frontendPorts": [
+                                    {
+                                        "name": "webFrontEndPort1",
+                                        "port": 80
+                                    }
+                                ],
+                                "backendAddressPools": [
+                                    {
+                                        "name": "webBackendAddressPool",
+                                        "backendAddresses": [
+                                            {
+                                                "ipAddress": "10.0.1.5"
+                                            },
+                                            {
+                                                "ipAddress": "10.0.1.6"
+                                            },
+                                            {
+                                                "ipAddress": "10.0.1.7"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "backendHttpSettingsCollection": [
+                                    {
+                                        "name": "webBackendHttpSetting1",
+                                        "port": 80,
+                                        "protocol": "Http",
+                                        "cookieBasedAffinity": "Disabled"
+                                    }
+                                ],
+                                "httpListeners": [
+                                    {
+                                        "name": "webHttpListener1",
+                                        "frontendIPConfigurationName": "webFrontEndIPConfig1",
+                                        "frontendPortName": "webFrontEndPort1",
+                                        "protocol": "Http"
+                                    }
+                                ],
+                                "requestRoutingRules": [
+                                    {
+                                        "name": "webRule1",
+                                        "ruleType": "Basic",
+                                        "httpListenerName": "webHttpListener1",
+                                        "backendAddressPoolName": "webBackendAddressPool",
+                                        "backendHttpSettingsName": "webBackendHttpSetting1"
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "LoadBalancer",
+                    "settings": [
+                        {
+                            "name": "biz-lb",
+                            "virtualNetwork": {
+                                "name": "luc-ntier-vnet"
+                            },
+                            "frontendIPConfigurations": [
+                                {
+                                    "name": "luc-ntier-biz-config1",
+                                    "loadBalancerType": "Internal",
+                                    "internalLoadBalancerSettings": {
+                                        "privateIPAddress": "10.0.2.250",
+                                        "subnetName": "biz"
+                                    }
+                                }
+                            ],
+                            "loadBalancingRules": [
+                                {
+                                    "name": "lbr1",
+                                    "frontendPort": 80,
+                                    "backendPort": 80,
+                                    "protocol": "Tcp",
+                                    "backendPoolName": "lb-bep1",
+                                    "frontendIPConfigurationName": "luc-ntier-biz-config1",
+                                    "probeName": "lbp1",
+                                    "enableFloatingIP": false
+                                }
+                            ],
+                            "probes": [
+                                {
+                                    "name": "lbp1",
+                                    "port": 80,
+                                    "protocol": "Http",
+                                    "requestPath": "/"
+                                }
+                            ],
+                            "backendPools": [
+                                {
+                                    "name": "lb-bep1",
+                                    "nics": [
+                                        "biz-vm1-nic1",
+                                        "biz-vm2-nic1",
+                                        "biz-vm3-nic1"
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },{
+                    "type": "NetworkSecurityGroup",
+                    "settings": [
+                        {
+                            "name": "luc-ntier-appgateway-nsg",
+                            "virtualNetworks": [
+                                {
+                                    "name": "luc-ntier-vnet",
+                                    "subnets": [
+                                        "appgateway"
+                                    ]
+                                }
+                            ],
+                            "securityRules": [
+                                {
+                                    "name": "HTTP",
+                                    "priority": 100
+                                },
+                                {
+                                    "name": "allow-app-gateway-v2",
+                                    "direction": "Inbound",
+                                    "priority": 110,
+                                    "sourceAddressPrefix": "*",
+                                    "destinationAddressPrefix": "*",
+                                    "sourcePortRange": "*",
+                                    "destinationPortRange": "65200-65535",
+                                    "access": "Allow",
+                                    "protocol": "*"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "luc-ntier-web-nsg",
+                            "virtualNetworks": [
+                                {
+                                    "name": "luc-ntier-vnet",
+                                    "subnets": [
+                                        "web"
+                                    ]
+                                }
+                            ],
+                            "securityRules": [
+                                {
+                                    "name": "HTTP",
+                                    "sourceAddressPrefix": "10.0.4.0/25",
+                                    "priority": 100
+                                },
+                                {
+                                    "name": "SSH",
+                                    "sourceAddressPrefix": "10.0.0.128/25",
+                                    "priority": 110
+                                }
+                            ]
+                        },
+                        {
+                            "name": "luc-ntier-biz-nsg",
+                            "virtualNetworks": [
+                                {
+                                    "name": "luc-ntier-vnet",
+                                    "subnets": [
+                                        "biz"
+                                    ]
+                                }
+                            ],
+                            "securityRules": [
+                                {
+                                    "name": "HTTP",
+                                    "sourceAddressPrefix": "10.0.1.0/24",
+                                    "priority": 100
+                                }
+                            ]
+                        },
+                        {
+                            "name": "luc-ntier-data-nsg",
+                            "virtualNetworks": [
+                                {
+                                    "name": "luc-ntier-vnet",
+                                    "subnets": [
+                                        "data"
+                                    ]
+                                }
+                            ],
+                            "securityRules": [
+                                {
+                                    "name": "SSH",
+                                    "priority": 100,
+                                    "sourceAddressPrefix": "10.0.0.128/25"
+                                },
+                                {
+                                    "name": "allow-ops-center-http",
+                                    "protocol": "*",
+                                    "sourcePortRange": "*",
+                                    "destinationPortRange": "8888-65535",
+                                    "sourceAddressPrefix": "*",
+                                    "destinationAddressPrefix": "*",
+                                    "access": "Allow",
+                                    "priority": 110,
+                                    "direction": "Inbound"
+                                }
+                            ]
+                        },
+                        {
+                            "name": "luc-ntier-mgmt-ops-nsg",
+                            "networkInterfaces": [
+                                {
+                                    "name": "ops-vm1-nic1"
+                                }
+                            ],
+                            "securityRules": [
+                                {
+                                    "name": "SSH",
+                                    "priority": 100,
+                                    "sourceAddressPrefix": "10.0.0.128/25"
+                                },
+                                {
+                                    "name": "allow-http",
+                                    "protocol": "*",
+                                    "sourcePortRange": "*",
+                                    "destinationPortRange": 8888,
+                                    "sourceAddressPrefix": "*",
+                                    "destinationAddressPrefix": "*",
+                                    "access": "Allow",
+                                    "priority": 110,
+                                    "direction": "Inbound"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
