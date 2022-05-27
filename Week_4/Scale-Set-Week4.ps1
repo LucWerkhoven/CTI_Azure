@@ -1,5 +1,5 @@
-﻿$mySubscriptionId = 'c064671c-8f74-4fec-b088-b53c568245eb'
-$myResourceGroup = 's1154427'
+﻿$mySubscriptionId = '???'
+$myResourceGroup = '???'
 $myScaleSet1 = "myScaleSetWeb"
 $myScaleSet2 = "myScaleSetData"
 $myScaleSet3 = "myScaleSetApp"
