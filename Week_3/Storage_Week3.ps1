@@ -1,6 +1,6 @@
 ﻿$code = Get-Random
 $storageAccountName='storage' + [string]$code
-$resourceGroupName='s1154427'
+$resourceGroupName='???'
 $region='westeurope'
 $shareName='myshare'
 $TableName='table1'
