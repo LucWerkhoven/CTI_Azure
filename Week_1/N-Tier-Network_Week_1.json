@@ -195,16 +195,6 @@
                                     "protocol": "Http",
                                     "requestPath": "/"
                                 }
-                            ],
-                            "backendPools": [
-                                {
-                                    "name": "lb-bep1",
-                                    "nics": [
-                                        "biz-vm1-nic1",
-                                        "biz-vm2-nic1",
-                                        "biz-vm3-nic1"
-                                    ]
-                                }
                             ]
                         }
                     ]
